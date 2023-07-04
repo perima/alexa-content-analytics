@@ -17,10 +17,16 @@ AlexaContentAnalytics.capture(handlerInput, config, payload);
 
 ```
 
-*handlerInput* is the handlerInput object passed to your skill on invocation.
+### Parameters
+**handlerInput** 
 
-*config* 
+The handlerInput object passed to your skill on invocation.
+
+**config**
+
 Configuration for the Alexa Analytics Client. Specifically the *endPointUrl* and the authorization *headers* for the receiving endpoint.
+
+```
 
 {
     endPointUrl: "https://your-analytics-endpoint"
@@ -29,8 +35,12 @@ Configuration for the Alexa Analytics Client. Specifically the *endPointUrl* and
     }
 }
 
-For more info on response interceptors see https://developer.amazon.com/en-US/docs/alexa/alexa-skills-kit-sdk-for-nodejs/handle-requests.html 
+```
 
-## authorization modes 
+For more info on response interceptors see
+
+ https://developer.amazon.com/en-US/docs/alexa/alexa-skills-kit-sdk-for-nodejs/handle-requests.html 
+
+## Authorization modes 
 
 At present the client supports http PUT endpoints utilzing HTTP headers for authorization. See separate github repo for sample serverless http endpoint.
