@@ -4,6 +4,15 @@ const { filesize } = require("filesize");
 const { DateTime } = require("luxon");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
+
+/**
+ * 
+ * Capture an analytics event
+ * 
+ * @param {object} handlerInput 
+ * @param {object} config 
+ * @param {object} payload  additional analytics info like player stream info
+ */
 exports.capture = function (handlerInput, config, payload) {
   getAlexaContentAnalytics()
 }
@@ -23,7 +32,7 @@ async function getAlexaContentAnalytics(handlerInput, config, payload) {
   /*
   let config = {
     endPointUrl: "https://your-analytics-endpoint"
-    config: {
+    headers: {
       your auth http headers
     }
   }
@@ -137,6 +146,14 @@ async function getDeviceResolution(handlerInput) {
   }
 }
 
+
+/**
+ * 
+ * The persistent attributes manager should contain an attribute named alexaContentAnalyticsRequestStartSecs for the event to capture correctly.
+ * 
+ * @param {*} handlerInput 
+ * @returns 
+ */
 async function getRequestStartTime(handlerInput) {
   // add timings
   try {
