@@ -1,0 +1,36 @@
+{
+  "name": "alexa-content-analytics",
+  "version": "1.0.6",
+  "description": "Enables a custom skill to integrate with a  content analytics service.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/perima/alexa-content-analytics.git"
+  },
+  "keywords": [
+    "amazon",
+    "alexa",
+    "alexa",
+    "custom",
+    "skill",
+    "content",
+    "analytics",
+    "analytics"
+  ],
+  "author": "Mav Peri",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/perima/alexa-content-analytics/issues"
+  },
+  "homepage": "https://github.com/perima/alexa-content-analytics#readme",
+  "dependencies": {
+    "ask-sdk": "^2.12.1",
+    "luxon": "^3.3.0",
+    "node-fetch": "^2.6.7",
+    "uuid": "^9.0.0" ,
+    "filesize": "^10.0.7"   
+  }
+}
