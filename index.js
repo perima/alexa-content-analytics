@@ -120,6 +120,7 @@ function getDeviceDisplaySupport(handlerInput) {
     return result;
   } catch (e) {
     console.error('AlexaContentAnalytics getDeviceDisplaySupport', JSON.stringify(e.message, null, 2));
+    return false;
   }
 }
 
