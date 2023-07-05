@@ -80,24 +80,66 @@ async function sendHttp(handlerInput, config, payload) {
 }
 
 
+function removeUnused(payload){
+  for(key in payload){
+    if(payload[key] === ""){
+      delete payload[key];
+    }
+  }
+  return payload;
+}
+
 // ref:  https://developers.google.com/analytics/devguides/collection/protocol/ga4/sending-events?client_type=gtag
 async function sendGA(handlerInput, config, payload) {
   const measurement_id = config.ga_measurement_id;
   const api_secret = config.ga_api_secret;
 
-  let aa = await processHandlerInput(payload, handlerInput, config);
-  let b = flatten(aa);
 
-/*
+
+  let aa = await processHandlerInput(payload, handlerInput, config);
+  let b = flatten(aa, { delimiter: "_" });
+  //(b);
+
+  let eventName = "unknown";
+  if ((b.requestType + b.intentName) !== "") {
+    eventName = b.requestType + b.intentName;
+  }
+
+  b = removeUnused(b);
+
+  /*
   console.log(JSON.stringify({
-    client_id: 'XXXXXXXXXX.YYYYYYYYYY',
+    client_id: 'XXXXXXXXXX',
     events: [{
-      name: payload.requestType + payload.intentName,
+      name:eventName,
+      params: b,
+    }]
+  }, null, 2));
+*/
+  //  console.log(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`)
+  /*
+  console.log(JSON.stringify({
+    client_id: b.deviceId,
+    events: [{
+      name: eventName,
       params: b,
     }]
   }), null, 2);
   */
+  // debug GA endpoint: `https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`
+      fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
+      method: "POST",
+      body: JSON.stringify({
+        client_id: payload.deviceId,
+        events: [{
+          name: eventName,
+          params: b,
+        }]
+      })
+    }).then(response=>response.toString()) // switch response.json for debug endpoint
+    .then(data=>{ console.log(data); })
 
+    return;
   let a = new Promise((resolve) => {
     return fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
       method: "POST",
@@ -108,15 +150,16 @@ async function sendGA(handlerInput, config, payload) {
           params: b,
         }]
       })
-
     }).then(async (res) => {
-       return res
+      console.log(res);
+      //  return res
     })
       .then((data) => resolve(data)).catch((error) => {
         console.error('AlexaContentAnalytics sendGA', JSON.stringify(error, null, 2));
       }
       );
   });
+
 }
 
 /**
@@ -134,7 +177,7 @@ async function processHandlerInput(payload, handlerInput, config) {
     return payload
   }
   payload.startRequestSecs = await getRequestStartTime(handlerInput);
-  payload.persistentStorage = getStorageFileSize(handlerInput);
+  // payload.persistentStorage = getStorageFileSize(handlerInput);
   payload.displaydevicesupport = getDeviceDisplaySupport(handlerInput);
   payload.displayresolution = await getDeviceResolution(handlerInput);
   payload.devicesupportinterfaces = getdeviceSupportedInterfaces(handlerInput);
@@ -157,7 +200,7 @@ async function processHandlerInput(payload, handlerInput, config) {
 */
 function getDeviceDisplaySupport(handlerInput) {
   try {
-    let result = false;
+    let result = "false";
     let supportedInterfaces = Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
     /*
     display device supportedInterfaces:
@@ -172,13 +215,13 @@ function getDeviceDisplaySupport(handlerInput) {
     */
 
     if (supportedInterfaces['Alexa.Presentation.APL'] !== undefined) {
-      result = true;
+      result = "true";
     }
 
     return result;
   } catch (e) {
     console.error('AlexaContentAnalytics getDeviceDisplaySupport', JSON.stringify(e.message, null, 2));
-    return false;
+    return "false";
   }
 }
 
@@ -222,7 +265,7 @@ async function getRequestStartTime(handlerInput) {
   } catch (e) {
     // payload.startRequestSecs = 0;
     console.error("AlexaContentAnalytics processHandlerInput startRequestSecs", JSON.stringify(e.message));
-    return -1;
+    return 0;
   }
 }
 
@@ -234,14 +277,15 @@ async function getStorageFileSize(handlerInput) {
     let persistentAtttributes = await attributesManager.getPersistentAttributes();
     let attributesStr = JSON.stringify(persistentAtttributes);
     let filesizeobj = filesize(attributesStr.length, { base: 2, standard: "jedec", output: "object" });
-
-    return {
+    let response = {
       size: filesizeobj.value,
       sizeUnit: filesizeobj.unit
-    }
+    };
+
+    return response
   } catch (e) {
     console.error('AlexaContentAnalytics getStorageFileSize', JSON.stringify(e.message));
-    let result = { size: -1, sizeUnit: "unknown " }
+    let result = { size: "0", sizeUnit: "unknown" }
     console.error('AlexaContentAnalytics getStorageFileSize', result);
 
     return result;
@@ -254,7 +298,7 @@ function getdeviceSupportedInterfaces(handlerInput) {
     return Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
   } catch (e) {
     console.error('AlexaContentAnalytics getdeviceSupportedInterfaces', JSON.stringify(e.message));
-    return {};
+    return { APL: "unknown" };
   }
 }
 
@@ -263,7 +307,7 @@ function getEndRequestSecs() {
     return DateTime.now().toMillis();
   } catch (e) {
     console.error(JSON.stringify('AlexaContentAnalytics getEndRequestSecs ', e.message));
-    return -1;
+    return 0;
   }
 }
 
@@ -289,7 +333,9 @@ function getRequestType(handlerInput) {
 
 function getDeviceId(handlerInput) {
   try {
-    return Alexa.getDeviceId(handlerInput.requestEnvelope);
+    let deviceId = Alexa.getDeviceId(handlerInput.requestEnvelope);
+    if (deviceId === "") { deviceId = "unknown" };
+    return deviceId;
   } catch (e) {
     console.error('AlexaContentAnalytics getDeviceId', JSON.stringify(e.message));
     return "unknown";
