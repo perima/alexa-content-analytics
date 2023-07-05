@@ -1,5 +1,5 @@
 
-Alexa content analytics package adds content analytics to a custom skill by emitting events to a designated endpoint. It currently supports  http endpoint.
+Alexa content analytics package adds content analytics to a custom skill by emitting events to a designated endpoint. It currently supports  http API endpoints (see sample [AWS serverless http api endpoint](https://github.com/perima/http-api-analytics-ingest))
 
 # Install 
 
@@ -125,30 +125,59 @@ Configuration for the Alexa Analytics Client.
 
 ```
 
-For more information on response interceptors see the  [Alexa documentation on interceptors](https://developer.amazon.com/en-US/docs/alexa/alexa-skills-kit-sdk-for-nodejs/handle-requests.html).
+For more information on response interceptors see the  [Alexa documentation on interceptors](https://developer.amazon.com/en-US/docs/alexa/alexa-skills-kit-sdk-for-nodejs/handle-requests.html#request-and-response-interceptors).
 
  **payload** (Object). A json object with any data you want to capture in addition to what is captured automatically. For example the particular piece of content served to the user like stream title, news piece, quiz etc.
 
-Alexa-content-analytics client will capture the following information when invoked 
+
 
 ```
 
-  payload.startRequestSecs // request start point, please enable in the response interceptor of your skill
-  payload.persistentStorage.size // size of persistent storage used for the particular user
-  payload.persistentStorage.sizeUnit  // size storage unit (b, kb, mb etc)
-  payload.displaydevicesupport // returns true if the device has a screen 
-  payload.displayresolution // the resolution of the device if available 
-  payload.devicesupportinterfaces // supported device interfaces for the device, for example APL
-  payload.endRequestSecs // unix seconds for the request endtime. Can be used with startRequestSecs (if enabled to calculate total duration)
-  payload.intentName // intent invoked (if applicable)
-  payload.requestType // request type (for example playBackStop)
-  payload.deviceId  // the id of the device
-  payload.locale  // device locale, for example en_au
-  payload.applicationId  // the skill id invoked
-  payload.requestEnvelopeRequest // the full request envelope 
+// Alexa-content-analytics client will capture the following information when invoked.
 
-  ```
+ // request start point, please enable in the response interceptor of your skill
+ payload.startRequestSecs
 
-## Authorization modes 
+// size of persistent storage used for the particular user
+payload.persistentStorage.sizeUnit  // size storage unit (b, kb, mb etc)
+  
+// returns true if the device has a screen 
+payload.displaydevicesupport 
 
-At present the client supports https API endpoints (PUT http method), utilzing HTTP headers for authorization. See separate github repo for sample serverless http endpoint.
+// the resolution of the device if available 
+payload.displayresolution 
+
+// supported device interfaces for the device, for example APL
+payload.devicesupportinterfaces
+
+// unix seconds for the request endtime. 
+// Can be used with startRequestSecs (if enabled to calculate total duration)
+payload.endRequestSecs 
+
+// intent invoked (if applicable)
+payload.intentName 
+
+// request type (for example playBackStop)
+payload.requestType 
+
+// the id of the device
+payload.deviceId  
+
+// device locale, for example en_au
+payload.locale  
+
+// the skill id invoked
+payload.applicationId  
+
+// the full request envelope 
+payload.requestEnvelopeRequest 
+
+```
+
+# Authorization modes 
+
+At present the client supports https API endpoints (PUT http method), utilzing HTTP headers for authorization. For more info on setting up an http endpoint see [sample serverless http API for more](https://github.com/perima/http-api-analytics-ingest).
+
+# Output 
+
+The client emits a json object.
