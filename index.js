@@ -251,7 +251,7 @@ async function getStorageFileSize(handlerInput) {
 
 function getdeviceSupportedInterfaces(handlerInput) {
   try {
-    payload.devicesupportinterfaces = Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
+    return Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
   } catch (e) {
     console.error('AlexaContentAnalytics getdeviceSupportedInterfaces', JSON.stringify(e.message));
     return {};
