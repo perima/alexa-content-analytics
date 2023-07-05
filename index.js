@@ -1,4 +1,4 @@
-const { Alexa } = require('ask-sdk');
+const  Alexa  = require('ask-sdk');
 const { v4: uuidv4 } = require('uuid');
 const { filesize } = require("filesize");
 const { DateTime } = require("luxon");
@@ -234,17 +234,11 @@ async function getDeviceResolution(handlerInput) {
         pixelHeight: await handlerInput.requestEnvelope.context.Viewport.pixelHeight
       }
     } else {
-      return {
-        pixelWidth: "",
-        pixelHeight: ""
-      }
+      return pixelWidth + "x" + pixelHeight
     }
   } catch (e) {
     console.error('AlexaContentAnalytics getDeviceResolution', JSON.stringify(e.message, null, 2));
-    return {
-      pixelWidth: "",
-      pixelHeight: ""
-    }
+    return "x"
   }
 }
 
