@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { filesize } = require("filesize");
 const { DateTime } = require("luxon");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-const UsageStats = require('usage-stats');
+var flatten = require('flat');
 
 /**
  * 
@@ -27,14 +27,12 @@ exports.capture = function (handlerInput, config, payload) {
  * @param {object} payload  additional analytics info like player stream info
  */
 async function getAlexaContentAnalytics(handlerInput, config, payload) {
- // console.log(config);
-  // configHeaders, endPointUrl
-
   /*
   let config = {
     endpointType: "http", // htttp sends event to http API,  ga for google analytics
-    endPointUrl: "https://your-analytics-endpoint" // required when endpointType is http 
-    gaPropertyId: 'your-ga-property-id', //required if sending to google analytics
+    endPointUrl: "https://your-analytics-endpoint", // required when endpointType is http 
+    ga_measurement_id: 'G-xxxxxxxxx', //required if sending to google analytics
+    ga_api_secret: '`your GA4 data stream api key',
     headers: {
       your auth http headers
     },
@@ -42,23 +40,21 @@ async function getAlexaContentAnalytics(handlerInput, config, payload) {
 }
   }
   */
-  switch(config.endpointType){
+  switch (config.endpointType) {
     case "http":
       sendHttp(handlerInput, config, payload);
-  //    console.log('*** http')
       break;
     case "ga":
-    //  console.log('*** ga');
       sendGA(handlerInput, config, payload);
       break;
     default:
-        console.error('config.endpointType incorrect value ' + config.endpointType);
+      console.error('config.endpointType incorrect value ' + config.endpointType);
   }
 
-  
+
 }
 
-async function sendHttp(handlerInput, config, payload){
+async function sendHttp(handlerInput, config, payload) {
   try {
     payload = await processHandlerInput(payload, handlerInput, config);
     var iso = DateTime.fromISO(DateTime.now());
@@ -83,12 +79,44 @@ async function sendHttp(handlerInput, config, payload){
   }
 }
 
-function sendGA(handlerInput, config, payload) {
-  
-  const usageStats = new UsageStats('UA-98765432-1', { an: 'example' });
-  usageStats.screenView('screen name')
-  usageStats.event('category', 'action')
-  usageStats.send()
+
+// ref:  https://developers.google.com/analytics/devguides/collection/protocol/ga4/sending-events?client_type=gtag
+async function sendGA(handlerInput, config, payload) {
+  const measurement_id = config.ga_measurement_id;
+  const api_secret = config.ga_api_secret;
+
+  let aa = await processHandlerInput(payload, handlerInput, config);
+  let b = flatten(aa);
+
+/*
+  console.log(JSON.stringify({
+    client_id: 'XXXXXXXXXX.YYYYYYYYYY',
+    events: [{
+      name: payload.requestType + payload.intentName,
+      params: b,
+    }]
+  }), null, 2);
+  */
+
+  let a = new Promise((resolve) => {
+    return fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
+      method: "POST",
+      body: JSON.stringify({
+        client_id: payload.deviceId,
+        events: [{
+          name: payload.requestType + payload.intentName,
+          params: b,
+        }]
+      })
+
+    }).then(async (res) => {
+       return res
+    })
+      .then((data) => resolve(data)).catch((error) => {
+        console.error('AlexaContentAnalytics sendGA', JSON.stringify(error, null, 2));
+      }
+      );
+  });
 }
 
 /**
@@ -192,7 +220,7 @@ async function getRequestStartTime(handlerInput) {
     requestAttributes = await handlerInput.attributesManager.getRequestAttributes();
     return requestAttributes.alexaContentAnalyticsRequestStartSecs;
   } catch (e) {
-    payload.startRequestSecs = 0;
+    // payload.startRequestSecs = 0;
     console.error("AlexaContentAnalytics processHandlerInput startRequestSecs", JSON.stringify(e.message));
     return -1;
   }
@@ -213,10 +241,10 @@ async function getStorageFileSize(handlerInput) {
     }
   } catch (e) {
     console.error('AlexaContentAnalytics getStorageFileSize', JSON.stringify(e.message));
-    return {
-      size: -1,
-      sizeUnit: "unknown"
-    }
+    let result = { size: -1, sizeUnit: "unknown " }
+    console.error('AlexaContentAnalytics getStorageFileSize', result);
+
+    return result;
   }
 }
 
