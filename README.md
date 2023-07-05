@@ -1,18 +1,23 @@
-# alexa-content-analytics
-Alexa content analytics package adds content analytics to a custom skill by emitting events to a designated endpoint.
 
-## Install 
+Alexa content analytics package adds content analytics to a custom skill by emitting events to a designated endpoint. It currently supports  http endpoint.
 
-``` npm install alexa-content-analytics ```
+# Install 
 
-## Usage
+First install the npm package in your project.
 
-### Response interceptor 
+``` 
 
-Add to the custom skill's ```response interceptor``` so that every invocation is captured.
+npm install alexa-content-analytics 
 
 ```
-// interceptors/requestInterceptor
+
+## Response interceptor 
+
+Call AlexaContentAnalytics client in the custom skill's ``` response interceptor ``` so that every invocation is captured. If this is the first time you are adding a response interceptor to your custom skill make sure to add the interceptor in your lambda handler.
+
+```
+
+// requestInterceptor
 
 const AlexaContentAnalytics  = require('alexa-content-analytics');
 
@@ -20,7 +25,7 @@ AlexaContentAnalytics.capture(handlerInput, config, payload);
 
 ```
 
-**Sample skill response interceptor**
+## Sample skill response interceptor
 
 ```
 
@@ -36,7 +41,7 @@ export const ResponseInterceptor = {
             let config = { // analytics endpoint configuration
                     endPointUrl: "https://your-analytics-endpoint"
                     headers: {
-                            {"your auth http headers"}
+                            {"your receiving analytics endpoint auth http headers"}
                         }
                 }
             AlexaContentAnalytics.capture(handlerInput, config, payload);
@@ -50,9 +55,9 @@ export const ResponseInterceptor = {
 ```
 
 
-### Request Interceptor (optional)
+## Request Interceptor (optional)
 
-If you wish to capture start time in seconds (so that you can work out total request duration in your analytics), you need to add the following line in your skill's request interceptor :
+If you wish to capture start time in seconds (so that you can work out total request duration in your analytics), you need to add the following code in your skill's request interceptor. 
 
 ```
 // sample skill request interceptor
@@ -79,14 +84,34 @@ export const RequestInterceptor = {
 
 ```
 
-### Parameters
+## Add interceptor(s) to your lambda handler
+
+```
+
+export const handler = Alexa.SkillBuilders.custom()
+    // call request interceptor before anything else 
+    .addRequestInterceptors(RequestInterceptor) 
+
+    // skill's other handlers here
+
+    // call response interceptor last
+    .addResponseInterceptors(ResponseInterceptor) 
+    .lambda();
+
+```
+
+## Client Parameters
 **handlerInput** 
 
 The handlerInput object passed to your skill on invocation.
 
 **config**
 
-Configuration for the Alexa Analytics Client. Specifically the *endPointUrl* and the authorization *headers* for the receiving endpoint.
+Configuration for the Alexa Analytics Client. 
+
+**endPointUrl** (String). The https endpoint that will receive the events sent from your skill. 
+
+ **headers** (Object) Authorization headers for the receiving endpoint.
 
 ```
 
@@ -94,18 +119,15 @@ Configuration for the Alexa Analytics Client. Specifically the *endPointUrl* and
     endPointUrl: "https://your-analytics-endpoint"
     headers: {
       your auth http headers
-    }
+    },
+    captureFullEnvelope: false
 }
 
 ```
 
-For more info on response interceptors see
+For more information on response interceptors see the  [Alexa documentation on interceptors](https://developer.amazon.com/en-US/docs/alexa/alexa-skills-kit-sdk-for-nodejs/handle-requests.html).
 
- https://developer.amazon.com/en-US/docs/alexa/alexa-skills-kit-sdk-for-nodejs/handle-requests.html 
-
- **payload**
-
-You can pass a json object with any data you want to capture. Please note that the client will capture the following when invoked automatically:
+ **payload** (Object). A json object with any data you want to capture in addition to what is captured automatically. For example the particular piece of content served to the user like stream title, news piece, quiz etc.
 
 Alexa-content-analytics client will capture the following information when invoked 
 
@@ -129,4 +151,4 @@ Alexa-content-analytics client will capture the following information when invok
 
 ## Authorization modes 
 
-At present the client supports http PUT endpoints utilzing HTTP headers for authorization. See separate github repo for sample serverless http endpoint.
+At present the client supports https API endpoints (PUT http method), utilzing HTTP headers for authorization. See separate github repo for sample serverless http endpoint.
