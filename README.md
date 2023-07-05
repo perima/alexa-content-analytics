@@ -116,11 +116,13 @@ Configuration for the Alexa Analytics Client.
 ```
 
 {
-    endPointUrl: "https://your-analytics-endpoint"
+    endpointType: "http", // htttp sends event to http API,  ga for google analytics
+    endPointUrl: "https://your-analytics-endpoint" // required when endpointType is http 
+    gaPropertyId: 'your-ga-property-id', //required if sending to google analytics
     headers: {
       your auth http headers
     },
-    captureFullEnvelope: false
+    captureFullEnvelope: false,
 }
 
 ```

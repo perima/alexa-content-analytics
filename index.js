@@ -1,9 +1,9 @@
-const { Alexa }  = require('ask-sdk');
+const { Alexa } = require('ask-sdk');
 const { v4: uuidv4 } = require('uuid');
 const { filesize } = require("filesize");
 const { DateTime } = require("luxon");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
+const UsageStats = require('usage-stats');
 
 /**
  * 
@@ -14,7 +14,7 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
  * @param {object} payload  additional analytics info like player stream info
  */
 exports.capture = function (handlerInput, config, payload) {
-  getAlexaContentAnalytics()
+  getAlexaContentAnalytics(handlerInput, config, payload)
 }
 
 /**
@@ -27,18 +27,40 @@ exports.capture = function (handlerInput, config, payload) {
  * @param {object} payload  additional analytics info like player stream info
  */
 async function getAlexaContentAnalytics(handlerInput, config, payload) {
+ // console.log(config);
   // configHeaders, endPointUrl
 
   /*
   let config = {
-    endPointUrl: "https://your-analytics-endpoint"
+    endpointType: "http", // htttp sends event to http API,  ga for google analytics
+    endPointUrl: "https://your-analytics-endpoint" // required when endpointType is http 
+    gaPropertyId: 'your-ga-property-id', //required if sending to google analytics
     headers: {
       your auth http headers
-    }
+    },
+    captureFullEnvelope: false
+}
   }
   */
+  switch(config.endpointType){
+    case "http":
+      sendHttp(handlerInput, config, payload);
+  //    console.log('*** http')
+      break;
+    case "ga":
+    //  console.log('*** ga');
+      sendGA(handlerInput, config, payload);
+      break;
+    default:
+        console.error('config.endpointType incorrect value ' + config.endpointType);
+  }
+
+  
+}
+
+async function sendHttp(handlerInput, config, payload){
   try {
-    payload = await processHandlerInput(payload, handlerInput);
+    payload = await processHandlerInput(payload, handlerInput, config);
     var iso = DateTime.fromISO(DateTime.now());
     payload.analyticsTimezoneName = iso.zoneName;
     payload.analyticsTimeStamp = iso.toString();
@@ -61,6 +83,14 @@ async function getAlexaContentAnalytics(handlerInput, config, payload) {
   }
 }
 
+function sendGA(handlerInput, config, payload) {
+  
+  const usageStats = new UsageStats('UA-98765432-1', { an: 'example' });
+  usageStats.screenView('screen name')
+  usageStats.event('category', 'action')
+  usageStats.send()
+}
+
 /**
 * 
 * add additional info to payload
@@ -70,7 +100,7 @@ async function getAlexaContentAnalytics(handlerInput, config, payload) {
 * @param handlerInput 
 * @returns 
 */
-async function processHandlerInput(payload, handlerInput) {
+async function processHandlerInput(payload, handlerInput, config) {
 
   if (handlerInput === undefined) {
     return payload
@@ -86,7 +116,7 @@ async function processHandlerInput(payload, handlerInput) {
   payload.deviceId = getDeviceId(handlerInput);
   payload.locale = getLocale(handlerInput);
   payload.applicationId = getApplicationId(handlerInput);
-  payload.requestEnvelopeRequest = getRequestEnvelope(handlerInput);
+  if (config.captureFullEnvelope === true) { payload.requestEnvelopeRequest = getRequestEnvelope(handlerInput) }
   return payload;
 }
 
