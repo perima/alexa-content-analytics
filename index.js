@@ -1,9 +1,10 @@
-const  Alexa  = require('ask-sdk');
+const  { Alexa }  = require('ask-sdk');
 const { v4: uuidv4 } = require('uuid');
 const { filesize } = require("filesize");
 const { DateTime } = require("luxon");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 var flatten = require('flat');
+
 
 /**
  * 
