@@ -67,6 +67,7 @@ async function sendHttp(handlerInput, config, payload) {
         headers: config.headers,
         body: JSON.stringify(payload)
       }).then(async (res) => {
+        config.debug === true && console.log(res.toString());
         return res.json()
       })
         .then((data) => resolve(data)).catch((error) => {
@@ -80,9 +81,16 @@ async function sendHttp(handlerInput, config, payload) {
 }
 
 
-function removeUnused(payload){
-  for(key in payload){
-    if(payload[key] === ""){
+/**
+ * 
+ * Remove any values that are invalid
+ * 
+ * @param {*} payload 
+ * @returns 
+ */
+function removeUnused(payload) {
+  for (key in payload) {
+    if (payload[key] === "" || payload[key] === null) {
       delete payload[key];
     }
   }
@@ -91,10 +99,8 @@ function removeUnused(payload){
 
 // ref:  https://developers.google.com/analytics/devguides/collection/protocol/ga4/sending-events?client_type=gtag
 async function sendGA(handlerInput, config, payload) {
- // const measurement_id = config.ga_measurement_id;
- // const api_secret = config.ga_api_secret;
-
-
+  // const measurement_id = config.ga_measurement_id;
+  // const api_secret = config.ga_api_secret;
 
   let aa = await processHandlerInput(handlerInput, config, payload);
   let b = flatten(aa, { delimiter: "_" });
@@ -126,8 +132,10 @@ async function sendGA(handlerInput, config, payload) {
     }]
   }), null, 2);
   */
-  // debug GA endpoint: `https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`
-      fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
+  if (config.debug === true) {
+    console.log('GA payload', payload);
+    // debug GA endpoint: `https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`
+    fetch(`https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
       method: "POST",
       body: JSON.stringify({
         client_id: payload.deviceId,
@@ -136,29 +144,26 @@ async function sendGA(handlerInput, config, payload) {
           params: b,
         }]
       })
-    }).then(response=>response.toString()) // switch response.json for debug endpoint
-    .then(data=>{ console.log(data); })
-
-    return;
-  let a = new Promise((resolve) => {
-    return fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
+    }).then(response => response.json()) // switch response.json for debug endpoint
+      .then(data => { console.log(data); })
+  } else {
+    // live endpoint 
+    fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
       method: "POST",
       body: JSON.stringify({
         client_id: payload.deviceId,
         events: [{
-          name: payload.requestType + payload.intentName,
+          name: eventName,
           params: b,
         }]
       })
-    }).then(async (res) => {
-      console.log(res);
-      //  return res
-    })
-      .then((data) => resolve(data)).catch((error) => {
-        console.error('AlexaContentAnalytics sendGA', JSON.stringify(error, null, 2));
-      }
-      );
-  });
+    }).then(response => response.toString()) // switch response.json for debug endpoint
+      .then(data => { console.log(data); })
+  }
+
+
+
+  return;
 
 }
 
@@ -172,7 +177,7 @@ async function sendGA(handlerInput, config, payload) {
 * @returns 
 */
 async function processHandlerInput(handlerInput, config, payload) {
-  config.debug === true && console.log('AlexaContentAnalytics handlerInput ', handlerInput);
+  config.debug === true && console.log('AlexaContentAnalytics processHandlerInput, handlerInput', JSON.stringify(handlerInput, null, 2));
   if (handlerInput === undefined) {
     return payload
   }
@@ -188,6 +193,8 @@ async function processHandlerInput(handlerInput, config, payload) {
   payload.locale = getLocale(handlerInput);
   payload.applicationId = getApplicationId(handlerInput);
   if (config.captureFullEnvelope === true) { payload.requestEnvelopeRequest = getRequestEnvelope(handlerInput) }
+
+  config.debug === true && console.log('AlexaContentAnalytics handlerInput payload', JSON.stringify(payload, null, 2));
   return payload;
 }
 
@@ -202,6 +209,7 @@ function getDeviceDisplaySupport(handlerInput) {
   try {
     let result = "false";
     let supportedInterfaces = Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
+    
     /*
     display device supportedInterfaces:
     {
@@ -281,7 +289,6 @@ async function getStorageFileSize(handlerInput) {
     console.error('AlexaContentAnalytics getStorageFileSize', JSON.stringify(e.message));
     let result = { size: "0", sizeUnit: "unknown" }
     console.error('AlexaContentAnalytics getStorageFileSize', result);
-
     return result;
   }
 }
@@ -289,7 +296,12 @@ async function getStorageFileSize(handlerInput) {
 
 function getdeviceSupportedInterfaces(handlerInput) {
   try {
-    return Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
+    let supportedInterfaces  = Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
+    let supportedInterFacesSimple = {};
+    for(key in supportedInterfaces){
+      supportedInterFacesSimple[key.replace(/\./g, '_')] = "true";
+    }
+    return supportedInterFacesSimple;
   } catch (e) {
     console.error('AlexaContentAnalytics getdeviceSupportedInterfaces', JSON.stringify(e.message));
     return { APL: "unknown" };
@@ -364,6 +376,3 @@ function getRequestEnvelope(handlerInput) {
     return {};
   }
 }
-
-
-
