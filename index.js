@@ -119,6 +119,8 @@ async function sendGA(handlerInput, config, payload) {
       eventName = 'unknown';
     }
 
+    eventName = eventName.replace(/\./g, '_');
+
     b = removeUnused(b);
 
     /*
@@ -328,7 +330,11 @@ function getEndRequestSecs() {
 function getIntentName(handlerInput) {
   try {
     if (Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest') {
-      return Alexa.getIntentName(handlerInput.requestEnvelope);
+      let intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+      if(intentName === undefined){
+        intentName = "";
+      }
+      return intentName;
     }
   } catch (e) {
     console.error('AlexaContentAnalytics getIntentName', JSON.stringify(e.message));
@@ -338,7 +344,8 @@ function getIntentName(handlerInput) {
 
 function getRequestType(handlerInput) {
   try {
-    return Alexa.getRequestType(handlerInput.requestEnvelope);
+    let requestType = Alexa.getRequestType(handlerInput.requestEnvelope) ;
+    return requestType.replace(/\./g, '_');
   } catch (e) {
     console.error('AlexaContentAnalytics getRequestType', JSON.stringify(e.message));
     return "";
@@ -384,3 +391,6 @@ function getRequestEnvelope(handlerInput) {
     return {};
   }
 }
+
+
+
