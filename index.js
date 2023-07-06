@@ -1,10 +1,9 @@
-const  { Alexa }  = require('ask-sdk');
+const Alexa = require('ask-sdk');
 const { v4: uuidv4 } = require('uuid');
 const { filesize } = require("filesize");
 const { DateTime } = require("luxon");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 var flatten = require('flat');
-
 
 /**
  * 
@@ -92,12 +91,12 @@ function removeUnused(payload){
 
 // ref:  https://developers.google.com/analytics/devguides/collection/protocol/ga4/sending-events?client_type=gtag
 async function sendGA(handlerInput, config, payload) {
-  const measurement_id = config.ga_measurement_id;
-  const api_secret = config.ga_api_secret;
+ // const measurement_id = config.ga_measurement_id;
+ // const api_secret = config.ga_api_secret;
 
 
 
-  let aa = await processHandlerInput(payload, handlerInput, config);
+  let aa = await processHandlerInput(handlerInput, config, payload);
   let b = flatten(aa, { delimiter: "_" });
   //(b);
 
@@ -172,8 +171,8 @@ async function sendGA(handlerInput, config, payload) {
 * @param handlerInput 
 * @returns 
 */
-async function processHandlerInput(payload, handlerInput, config) {
-
+async function processHandlerInput(handlerInput, config, payload) {
+  config.debug === true && console.log('AlexaContentAnalytics handlerInput ', handlerInput);
   if (handlerInput === undefined) {
     return payload
   }
