@@ -99,72 +99,80 @@ function removeUnused(payload) {
 
 // ref:  https://developers.google.com/analytics/devguides/collection/protocol/ga4/sending-events?client_type=gtag
 async function sendGA(handlerInput, config, payload) {
-  // const measurement_id = config.ga_measurement_id;
-  // const api_secret = config.ga_api_secret;
+  try {
 
-  let aa = await processHandlerInput(handlerInput, config, payload);
-  let b = flatten(aa, { delimiter: "_" });
-  //(b);
+    // const measurement_id = config.ga_measurement_id;
+    // const api_secret = config.ga_api_secret;
 
-  let eventName = "unknown";
-  if ((b.requestType + b.intentName) !== "") {
-    eventName = b.requestType + b.intentName;
-  }
+    let aa = await processHandlerInput(handlerInput, config, payload);
+    let b = flatten(aa, { delimiter: "_" });
+    //(b);
 
-  b = removeUnused(b);
+    let eventName = "";
+    if ((b.requestType) !== undefined) {
+      eventName = eventName + b.requestType;
+    }
+    if ((b.intentName) !== undefined) {
+      eventName = eventName + b.intentName;
+    }
+    if (eventName === "") {
+      eventName = 'unknown';
+    }
 
-  /*
-  console.log(JSON.stringify({
-    client_id: 'XXXXXXXXXX',
-    events: [{
-      name:eventName,
-      params: b,
-    }]
-  }, null, 2));
-*/
-  //  console.log(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`)
-  /*
-  console.log(JSON.stringify({
-    client_id: b.deviceId,
-    events: [{
-      name: eventName,
-      params: b,
-    }]
-  }), null, 2);
+    b = removeUnused(b);
+
+    /*
+    console.log(JSON.stringify({
+      client_id: 'XXXXXXXXXX',
+      events: [{
+        name:eventName,
+        params: b,
+      }]
+    }, null, 2));
   */
-  if (config.debug === true) {
-    console.log('GA payload', payload);
-    // debug GA endpoint: `https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`
-    fetch(`https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
-      method: "POST",
-      body: JSON.stringify({
-        client_id: payload.deviceId,
-        events: [{
-          name: eventName,
-          params: b,
-        }]
-      })
-    }).then(response => response.json()) // switch response.json for debug endpoint
-      .then(data => { console.log(data); })
-  } else {
-    // live endpoint 
-    fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
-      method: "POST",
-      body: JSON.stringify({
-        client_id: payload.deviceId,
-        events: [{
-          name: eventName,
-          params: b,
-        }]
-      })
-    }).then(response => response.toString()) // switch response.json for debug endpoint
-      .then(data => { console.log(data); })
+    //  console.log(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`)
+    /*
+    console.log(JSON.stringify({
+      client_id: b.deviceId,
+      events: [{
+        name: eventName,
+        params: b,
+      }]
+    }), null, 2);
+    */
+    if (config.debugGA === true) {
+      console.log('GA payload', b);
+      // debug GA endpoint: `https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`
+      fetch(`https://www.google-analytics.com/debug/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
+        method: "POST",
+        body: JSON.stringify({
+          client_id: payload.deviceId,
+          events: [{
+            name: eventName,
+            params: b,
+          }]
+        })
+      }).then(response => response.json()) // switch response.json for debug endpoint
+        .then(data => { console.log(data); })
+    } else {
+      config.debug === true && console.log('GA payload', b);
+      // live endpoint 
+      fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${config.ga_measurement_id}&api_secret=${config.ga_api_secret}`, {
+        method: "POST",
+        body: JSON.stringify({
+          client_id: payload.deviceId,
+          events: [{
+            name: eventName,
+            params: b,
+          }]
+        })
+      }).then(response => response.toString()) // switch response.json for debug endpoint
+        .then(data => { console.log(data); })
+    }
+    return;
+  } catch (error) {
+    console.error(JSON.stringify(e.message, null, 2))
   }
-
-
-
-  return;
-
 }
 
 /**
@@ -209,7 +217,7 @@ function getDeviceDisplaySupport(handlerInput) {
   try {
     let result = "false";
     let supportedInterfaces = Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
-    
+
     /*
     display device supportedInterfaces:
     {
@@ -296,9 +304,9 @@ async function getStorageFileSize(handlerInput) {
 
 function getdeviceSupportedInterfaces(handlerInput) {
   try {
-    let supportedInterfaces  = Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
+    let supportedInterfaces = Alexa.getSupportedInterfaces(handlerInput.requestEnvelope);
     let supportedInterFacesSimple = {};
-    for(key in supportedInterfaces){
+    for (key in supportedInterfaces) {
       supportedInterFacesSimple[key.replace(/\./g, '_')] = "true";
     }
     return supportedInterFacesSimple;
